@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Group Mapping Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg:#ECEEE8;
+    --surface:#FFFFFF;
+    --ink:#1C2420;
+    --muted:#5B6862;
+    --line:#D3D8CE;
+    --accent:#33604F;
+    --accent-ink:#F2F5F1;
+    --badge:#B7862E;
+    --danger:#A23E3E;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'IBM Plex Serif',serif;font-weight:600;margin:0;}
+  button{font-family:inherit;}
+  #app{min-height:100vh;display:flex;flex-direction:column;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--line);}
+  .topbar .mark{font-family:'IBM Plex Serif',serif;font-size:17px;letter-spacing:0.2px;}
+  .progress{display:flex;gap:6px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--line);}
+  .dot.done{background:var(--accent);}
+  .dot.active{background:var(--badge);}
+
+  .centerpane{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:40px;max-width:460px;width:100%;}
+  .card h2{font-size:24px;margin-bottom:10px;}
+  .card p{color:var(--muted);line-height:1.55;font-size:15px;}
+  input[type=text]{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;margin-top:14px;background:#fff;color:var(--ink);}
+  input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-size:14.5px;font-weight:500;cursor:pointer;}
+  .btn:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .btn.secondary{background:transparent;color:var(--accent);}
+  .btn.quiet{background:transparent;border-color:var(--line);color:var(--muted);}
+  .btn.wide{width:100%;justify-content:center;margin-top:18px;}
+  .error{color:var(--danger);font-size:13.5px;margin-top:10px;min-height:1em;}
+
+  .study-header{padding:26px 34px 10px;max-width:920px;margin:0 auto;width:100%;}
+  .section-tag{font-size:12.5px;color:var(--muted);margin-bottom:6px;}
+  .prompt{font-size:23px;line-height:1.4;max-width:640px;}
+  .subhint{color:var(--muted);font-size:14px;margin-top:8px;}
+
+  .workspace{flex:1;display:flex;gap:24px;max-width:920px;margin:18px auto 0;padding:0 34px 30px;width:100%;}
+  .palette{width:150px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:6px;}
+  .avatar-source{width:86px;height:86px;border:1.5px dashed var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:grab;background:var(--surface);}
+  .avatar-source:active{cursor:grabbing;}
+  .palette-label{font-size:12.5px;color:var(--muted);text-align:center;line-height:1.4;}
+  .dropzone{flex:1;position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);min-height:420px;overflow:hidden;}
+  .dropzone.dragover{border-color:var(--accent);}
+  .dropzone .empty-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;pointer-events:none;}
+
+  .avatar-token{position:absolute;width:64px;text-align:center;cursor:grab;user-select:none;}
+  .avatar-token:active{cursor:grabbing;}
+  .avatar-token .circle{width:52px;height:52px;border-radius:50%;background:var(--ink);margin:0 auto;position:relative;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;}
+  .avatar-token .num{position:absolute;top:-4px;right:-2px;background:var(--badge);color:#fff;font-size:10px;font-weight:600;width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .avatar-token .label{margin-top:5px;font-size:11px;color:var(--muted);line-height:1.25;max-height:2.6em;overflow:hidden;}
+  .avatar-token .remove{position:absolute;top:-4px;left:-2px;background:var(--surface);border:1px solid var(--line);color:var(--danger);width:16px;height:16px;border-radius:50%;font-size:10px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+
+  .footer-row{max-width:920px;margin:0 auto;padding:0 34px 34px;display:flex;justify-content:space-between;align-items:center;width:100%;}
+  .count-note{color:var(--muted);font-size:13.5px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(20,26,22,0.45);display:flex;align-items:center;justify-content:center;z-index:50;}
+  .modal{background:var(--surface);border-radius:var(--radius);padding:28px;max-width:420px;width:92%;}
+  .modal h3{font-size:17px;margin-bottom:6px;}
+  .modal p{color:var(--muted);font-size:13.5px;margin:0 0 12px;}
+  .modal textarea{width:100%;min-height:80px;padding:12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14.5px;resize:vertical;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+
+  .completion-code{font-family:'IBM Plex Serif',serif;font-size:26px;letter-spacing:1px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:16px 20px;text-align:center;margin:20px 0;}
+  .saving-note{color:var(--muted);font-size:13px;margin-top:10px;min-height:1.2em;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================================
+   CONFIGURE THIS BEFORE SHARING THE LINK WITH PARTICIPANTS
+   APPS_SCRIPT_URL: the "Web app" URL you get after deploying the Apps
+   Script (ends in /exec). See the setup instructions provided separately.
+   To view or export your data, just open the Google Sheet directly —
+   there's no admin view inside this page anymore.
+   ========================================================================= */
+const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+/* ---------------- Question definitions ---------------- */
+const QUESTIONS = [
+  {id:1, section:"Part 1 — your ideal", prompt:"Create a group that represents your ideal of a diverse group."},
+  {id:2, section:"Part 1 — your ideal", prompt:"Create a group that represents your ideal of a racially diverse group."},
+  {id:3, section:"Part 1 — your ideal", prompt:"Create a group that represents your ideal of a gender diverse group."},
+  {id:4, section:"Part 1 — your ideal", prompt:"Create a group that represents your ideal of age diversity."},
+  {id:5, section:"Part 2 — what you believe exists", prompt:"Create a group that you feel represents the diversity in the US, broadly."},
+  {id:6, section:"Part 2 — what you believe exists", prompt:"Create a group that you feel represents the diversity in Canada, broadly."},
+  {id:7, section:"Part 2 — what you believe exists", prompt:"Create a group that you feel represents the diversity in your state or province, broadly.", requiresLocation:true}
+];
+const INTERSTITIAL_TEXT = "The next set of questions will be about creating groups you believe already exist.";
+const COMPLETION_CODE = "GROUP-MAPPING-2026";
+
+/* ---------------- App state ---------------- */
+let uid = null;
+let answeredQuestions = new Set(); // question ids already saved to the Sheet
+let qPos = -1;            // -1 = id screen, 0..6 = question index, 7 = completion
+let showInterstitial = false;
+let avatars = [];         // {id, x, y, details}
+let avatarSeq = 0;
+let stateProvince = "";
+let pendingAvatarId = null;
+let dragOffset = {x:0,y:0};
+let isSubmitting = false;
+let configError = !APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf("PASTE_YOUR") === 0;
+
+const app = document.getElementById('app');
+
+/* ---------------- Backend calls (Google Apps Script) ---------------- */
+async function fetchProgress(id){
+  const url = `${APPS_SCRIPT_URL}?action=getProgress&participantId=${encodeURIComponent(id)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || "Could not load progress");
+  return data.answeredQuestions || [];
+}
+
+async function postResponse(payload){
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    // text/plain avoids a CORS preflight against Apps Script; the script
+    // still parses the body as JSON on its side.
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || "Save failed");
+  return data;
+}
+
+/* ---------------- Navigation ---------------- */
+function firstUnansweredIndex(){
+  for(let i=0;i<QUESTIONS.length;i++){
+    if(!answeredQuestions.has(QUESTIONS[i].id)) return i;
+  }
+  return QUESTIONS.length;
+}
+
+async function beginStudy(inputId){
+  const trimmed = inputId.trim();
+  if(!trimmed){ renderIdScreen("Please enter your participant ID."); return; }
+  uid = trimmed;
+  renderIdScreen(null, true);
+  try{
+    const answered = await fetchProgress(uid);
+    answeredQuestions = new Set(answered);
+  }catch(e){
+    renderIdScreen("Could not reach the study server. Please check your connection and try again.");
+    return;
+  }
+  qPos = firstUnansweredIndex();
+  if(qPos >= QUESTIONS.length){
+    qPos = 7;
+    render();
+    return;
+  }
+  showInterstitial = (qPos === 4);
+  resetCanvas();
+  render();
+}
+
+function resetCanvas(){
+  avatars = [];
+  avatarSeq = 0;
+  stateProvince = "";
+  pendingAvatarId = null;
+}
+
+function continueFromInterstitial(){
+  showInterstitial = false;
+  render();
+}
+
+/* ---------------- Avatar canvas logic ---------------- */
+function addAvatarAt(x,y){
+  const id = ++avatarSeq;
+  avatars.push({id, x, y, details:""});
+  pendingAvatarId = id;
+  render();
+}
+function openEdit(id){ pendingAvatarId = id; render(); }
+function removeAvatar(id){ avatars = avatars.filter(a=>a.id!==id); render(); }
+function saveAvatarDetails(id, text){
+  const a = avatars.find(a=>a.id===id);
+  if(a) a.details = text.trim();
+  pendingAvatarId = null;
+  render();
+}
+function cancelAvatarEdit(id){
+  const a = avatars.find(a=>a.id===id);
+  if(a && !a.details){ avatars = avatars.filter(x=>x.id!==id); }
+  pendingAvatarId = null;
+  render();
+}
+
+/* ---------------- Submit a question ---------------- */
+async function submitCurrentQuestion(){
+  if(isSubmitting) return;
+  const q = QUESTIONS[qPos];
+  const empties = avatars.filter(a=>!a.details);
+  if(empties.length){ alert("Please add a description for every avatar before submitting, or remove it."); return; }
+  if(q.requiresLocation && !stateProvince.trim()){ alert("Please tell us what state or province you live in."); return; }
+  if(avatars.length === 0){
+    const ok = confirm("You haven't placed any avatars for this group. Submit an empty group?");
+    if(!ok) return;
+  }
+
+  isSubmitting = true;
+  setSavingNote("Saving your group…");
+
+  const dz = document.getElementById('dropzone');
+  let screenshot = null;
+  try{
+    const canvas = await html2canvas(dz, {backgroundColor:'#ffffff', scale:1});
+    screenshot = canvas.toDataURL('image/jpeg', 0.72);
+  }catch(e){ console.error('screenshot failed', e); }
+
+  const payload = {
+    action: 'saveResponse',
+    participantId: uid,
+    questionNumber: q.id,
+    section: q.section,
+    prompt: q.prompt,
+    stateProvince: q.requiresLocation ? stateProvince.trim() : "",
+    numAvatars: avatars.length,
+    avatars: avatars.map((a,i)=>({index:i+1, details:a.details})),
+    screenshot: screenshot,
+    submittedAt: new Date().toISOString()
+  };
+
+  try{
+    await postResponse(payload);
+  }catch(e){
+    isSubmitting = false;
+    setSavingNote("");
+    alert("Sorry, we couldn't save that group. Please check your connection and try Submit again.");
+    return;
+  }
+
+  isSubmitting = false;
+  answeredQuestions.add(q.id);
+  const next = qPos + 1;
+  if(next >= QUESTIONS.length){
+    qPos = 7;
+    render();
+    return;
+  }
+  qPos = next;
+  resetCanvas();
+  if(qPos === 4){ showInterstitial = true; }
+  render();
+}
+
+function setSavingNote(text){
+  const el = document.getElementById('saving-note');
+  if(el) el.textContent = text;
+}
+
+function startOver(){
+  uid = null; answeredQuestions = new Set(); qPos = -1; showInterstitial = false;
+  resetCanvas();
+  render();
+}
+
+/* ---------------- Rendering ---------------- */
+function render(){
+  if(qPos === -1){ renderIdScreen(); return; }
+  if(qPos === 7){ renderCompletion(); return; }
+  if(showInterstitial){ renderInterstitial(); return; }
+  renderQuestion();
+}
+
+function renderIdScreen(err, loading){
+  if(configError){
+    app.innerHTML = `
+      <div class="topbar"><div class="mark">Group Mapping Study</div><div></div></div>
+      <div class="centerpane">
+        <div class="card">
+          <h2>Setup needed</h2>
+          <p>This page isn't connected to a data store yet. Open the file's code and set <code>APPS_SCRIPT_URL</code> near the top of the script to your deployed Google Apps Script web app URL, then reload.</p>
+        </div>
+      </div>`;
+    return;
+  }
+  app.innerHTML = `
+    <div class="topbar"><div class="mark">Group Mapping Study</div><div></div></div>
+    <div class="centerpane">
+      <div class="card">
+        <h2>Welcome</h2>
+        <p>You'll build a series of small groups using avatars, based on prompts we'll show you. Enter the participant ID you were given to begin.</p>
+        <input type="text" id="uid-input" placeholder="Participant ID" autocomplete="off" ${loading?"disabled":""}>
+        <div class="error">${err||""}</div>
+        <button class="btn wide" id="begin-btn" ${loading?"disabled":""}>${loading?"Loading…":"Begin"}</button>
+      </div>
+    </div>`;
+  if(loading) return;
+  const input = document.getElementById('uid-input');
+  input.focus();
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('begin-btn').click(); });
+  document.getElementById('begin-btn').addEventListener('click', ()=>beginStudy(input.value));
+}
+
+function renderInterstitial(){
+  app.innerHTML = `
+    <div class="topbar"><div class="mark">Group Mapping Study</div>${progressDotsHtml()}</div>
+    <div class="centerpane">
+      <div class="card">
+        <h2>Moving on</h2>
+        <p>${INTERSTITIAL_TEXT}</p>
+        <button class="btn wide" id="cont-btn">Continue</button>
+      </div>
+    </div>`;
+  document.getElementById('cont-btn').addEventListener('click', continueFromInterstitial);
+}
+
+function progressDotsHtml(){
+  let dots = "";
+  for(let i=0;i<QUESTIONS.length;i++){
+    let cls = "dot";
+    if(i < qPos) cls += " done";
+    else if(i === qPos) cls += " active";
+    dots += `<div class="${cls}"></div>`;
+  }
+  return `<div class="progress">${dots}</div>`;
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[qPos];
+  app.innerHTML = `
+    <div class="topbar"><div class="mark">Group Mapping Study</div>${progressDotsHtml()}</div>
+    <div class="study-header">
+      <div class="section-tag">${q.section}</div>
+      <div class="prompt">${q.prompt}</div>
+      ${q.requiresLocation ? `<input type="text" id="loc-input" placeholder="Your state or province" style="max-width:280px;" value="${stateProvince.replace(/"/g,'&quot;')}">` : ""}
+      <div class="subhint">Drag the figure into the space, or click it to add one. Add as many or as few as you like, then describe who each one represents.</div>
+    </div>
+    <div class="workspace">
+      <div class="palette">
+        <div class="avatar-source" id="avatar-source" draggable="true" title="Drag or click to add">${personSvg()}</div>
+        <div class="palette-label">Drag onto the canvas, or click to place</div>
+      </div>
+      <div class="dropzone" id="dropzone">
+        ${avatars.length===0 ? '<div class="empty-msg">Your group will appear here</div>' : ""}
+        ${avatars.map(avatarHtml).join("")}
+      </div>
+    </div>
+    <div class="footer-row">
+      <div>
+        <div class="count-note">${avatars.length} avatar${avatars.length===1?"":"s"} in this group</div>
+        <div class="saving-note" id="saving-note"></div>
+      </div>
+      <button class="btn" id="submit-q-btn" ${isSubmitting?"disabled":""}>${isSubmitting?"Saving…":"Submit this group"}</button>
+    </div>
+    ${pendingAvatarId ? modalHtml(avatars.find(a=>a.id===pendingAvatarId)) : ""}
+  `;
+
+  if(q.requiresLocation){
+    document.getElementById('loc-input').addEventListener('input', e=>{ stateProvince = e.target.value; });
+  }
+
+  wireDragAndDrop();
+  document.getElementById('submit-q-btn').addEventListener('click', submitCurrentQuestion);
+
+  document.querySelectorAll('.avatar-token').forEach(el=>{
+    const id = Number(el.dataset.id);
+    el.querySelector('.circle').addEventListener('click', (e)=>{ e.stopPropagation(); openEdit(id); });
+    const rm = el.querySelector('.remove');
+    if(rm) rm.addEventListener('click', (e)=>{ e.stopPropagation(); removeAvatar(id); });
+  });
+
+  if(pendingAvatarId){
+    const ta = document.getElementById('avatar-detail-input');
+    ta.focus();
+    document.getElementById('save-detail-btn').addEventListener('click', ()=>saveAvatarDetails(pendingAvatarId, ta.value));
+    document.getElementById('cancel-detail-btn').addEventListener('click', ()=>cancelAvatarEdit(pendingAvatarId));
+  }
+}
+
+function personSvg(){
+  return `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="17" cy="10" r="6" fill="#fff"/>
+    <path d="M4 30c0-8 6-12 13-12s13 4 13 12" fill="#fff"/>
+  </svg>`;
+}
+
+function avatarHtml(a){
+  const label = a.details ? escapeHtml(a.details) : "…";
+  return `<div class="avatar-token" data-id="${a.id}" draggable="true" style="left:${a.x}px; top:${a.y}px;">
+      <div class="circle">${personSvg()}<div class="num">${avatars.findIndex(x=>x.id===a.id)+1}</div><div class="remove" title="Remove">×</div></div>
+      <div class="label">${label}</div>
+    </div>`;
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function modalHtml(avatar){
+  if(!avatar) return "";
+  return `<div class="modal-overlay">
+    <div class="modal">
+      <h3>Who does this avatar represent?</h3>
+      <p>Describe this person or group member as specifically or broadly as you like (e.g. "White men," "Black women," "a nonbinary teenager").</p>
+      <textarea id="avatar-detail-input">${escapeHtml(avatar.details||"")}</textarea>
+      <div class="modal-actions">
+        <button class="btn quiet" id="cancel-detail-btn">Cancel</button>
+        <button class="btn" id="save-detail-btn">Save</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function wireDragAndDrop(){
+  const source = document.getElementById('avatar-source');
+  const dz = document.getElementById('dropzone');
+
+  source.addEventListener('dragstart', e=>{
+    e.dataTransfer.setData('text/plain', 'new-avatar');
+  });
+  source.addEventListener('click', ()=>{
+    const rect = dz.getBoundingClientRect();
+    const x = 30 + Math.random()*(rect.width-100);
+    const y = 30 + Math.random()*(rect.height-110);
+    addAvatarAt(Math.max(10,x), Math.max(10,y));
+  });
+
+  dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', ()=>{ dz.classList.remove('dragover'); });
+  dz.addEventListener('drop', e=>{
+    e.preventDefault();
+    dz.classList.remove('dragover');
+    const data = e.dataTransfer.getData('text/plain');
+    const rect = dz.getBoundingClientRect();
+    if(data === 'new-avatar'){
+      const x = e.clientX - rect.left - 32;
+      const y = e.clientY - rect.top - 32;
+      addAvatarAt(Math.max(4,x), Math.max(4,y));
+    }else if(data.startsWith('move:')){
+      const id = Number(data.split(':')[1]);
+      const a = avatars.find(a=>a.id===id);
+      if(a){
+        a.x = Math.max(4, e.clientX - rect.left - dragOffset.x);
+        a.y = Math.max(4, e.clientY - rect.top - dragOffset.y);
+        render();
+      }
+    }
+  });
+
+  document.querySelectorAll('.avatar-token').forEach(el=>{
+    el.addEventListener('dragstart', e=>{
+      const id = Number(el.dataset.id);
+      const r = el.getBoundingClientRect();
+      dragOffset = {x: e.clientX - r.left, y: e.clientY - r.top};
+      e.dataTransfer.setData('text/plain', 'move:'+id);
+    });
+  });
+}
+
+function renderCompletion(){
+  app.innerHTML = `
+    <div class="topbar"><div class="mark">Group Mapping Study</div><div></div></div>
+    <div class="centerpane">
+      <div class="card">
+        <h2>You're all done — thank you</h2>
+        <p>Please enter the completion code below wherever your study instructions ask for it, to receive your compensation.</p>
+        <div class="completion-code">${COMPLETION_CODE}</div>
+        <button class="btn secondary wide" id="restart-btn">Start over as a new participant</button>
+      </div>
+    </div>`;
+  document.getElementById('restart-btn').addEventListener('click', startOver);
+}
+
+render();
+</script>
+</body>
+</html>
